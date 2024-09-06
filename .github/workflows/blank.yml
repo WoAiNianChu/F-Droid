@@ -1,4 +1,4 @@
-name: Download F-Droid Index
+name: Download and Extract F-Droid Index
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   push: # 当代码推送到仓库时触发
 
 jobs:
-  download-index:
+  download-and-extract:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,18 +16,24 @@ jobs:
 
       - name: Download F-Droid Index
         run: |
-          curl -o index-v1.json https://f-droid.org/repo/index-v1.json
+          curl -o index.jar https://f-droid.org/repo/index.jar
 
-      - name: Configure Git
+      - name: Extract index.xml from JAR
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          unzip -o index.jar index.xml
+
+      - name: Convert index.xml to JSON
+        run: |
+          sudo apt-get install -y xmlstarlet
+          xmlstarlet sel -t -m "/fd-index/application" -v "concat(packageName,'|',name,'|',desc,'|',versions/version/versionCode,'|',versions/version/versionName,'|',versions/version/apkName)" -n index.xml > index.txt
+          # 将XML转换成JSON格式
+          jq -R -s -c 'split("\n") | map(split("|") | {packageName: .[0], name: .[1], desc: .[2], versionCode: .[3], versionName: .[4], apkName: .[5]})' index.txt > index.json
 
       - name: Commit and Push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git add index-v1.json
+          git add index.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
