@@ -4,13 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F-Droid 应用查询</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 8px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>查询 F-Droid 应用信息</h1>
-    <input type="text" id="query" placeholder="输入包名或应用名称">
-    <button onclick="fetchAppInfo()">查询</button>
-
-    <div id="result"></div>
+    <div id="container">
+        <h1>查询 F-Droid 应用信息</h1>
+        <input type="text" id="query" placeholder="输入包名或应用名称">
+        <button onclick="fetchAppInfo()">查询</button>
+        <div id="result"></div>
+    </div>
 
     <script>
         async function fetchAppInfo() {
@@ -18,7 +55,6 @@
             const response = await fetch('index-v1.json');
             const indexData = await response.json();
 
-            // 遍历所有应用并查找匹配项
             const packages = indexData.packages;
             const appInfo = Object.keys(packages).map(key => packages[key])
                 .find(app => 
