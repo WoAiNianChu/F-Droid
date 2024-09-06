@@ -1,80 +1,70 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>F-Droid 应用查询</title>
+    <title>F-Droid App Info</title>
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        #container {
             text-align: center;
+            margin: 0;
             padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 400px;
         }
-        input[type="text"] {
-            width: 80%;
-            padding: 8px;
-            margin: 10px 0;
+        .app-info {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
         }
-        button {
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
+        h2 {
+            margin: 0;
+            font-size: 24px;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <h1>查询 F-Droid 应用信息</h1>
-        <input type="text" id="query" placeholder="输入包名或应用名称">
-        <button onclick="fetchAppInfo()">查询</button>
-        <div id="result"></div>
-    </div>
+    <h1>F-Droid App Information</h1>
+    <input type="text" id="search" placeholder="Enter package name or app name">
+    <button onclick="searchApp()">Search</button>
+    <div id="app-details"></div>
 
     <script>
-        async function fetchAppInfo() {
-            const query = document.getElementById('query').value.toLowerCase().trim();
+        let appsData = [];
+
+        async function loadData() {
             const response = await fetch('index.json');
-            const indexData = await response.json();
+            appsData = await response.json();
+        }
 
-            const appInfo = indexData.find(app => 
-                app.packageName.toLowerCase() === query || 
-                (app.name && app.name.toLowerCase().includes(query))
-            );
+        function searchApp() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const app = appsData.find(a => a.id.toLowerCase() === query || a.name.toLowerCase().includes(query));
+            displayAppInfo(app);
+        }
 
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // 清空之前的结果
-
-            if (appInfo) {
-                resultDiv.innerHTML = `
-                    <h2>${appInfo.name || '无应用名称'} (${appInfo.packageName})</h2>
-                    <p><strong>版本号:</strong> ${appInfo.versionCode}</p>
-                    <p><strong>版本名称:</strong> ${appInfo.versionName || '无版本名称'}</p>
-                    <p><strong>应用介绍:</strong> ${appInfo.desc || '无描述'}</p>
-                    <p><strong>最新安装包:</strong> <a href="https://f-droid.org/repo/${appInfo.apkName}" target="_blank">下载链接</a></p>
+        function displayAppInfo(app) {
+            const container = document.getElementById('app-details');
+            if (app) {
+                container.innerHTML = `
+                    <div class="app-info">
+                        <h2>${app.name}</h2>
+                        <p><strong>Package Name:</strong> ${app.id}</p>
+                        <p><strong>Summary:</strong> ${app.summary}</p>
+                        <p><strong>Description:</strong> ${app.desc}</p>
+                        <p><strong>Version:</strong> ${app.versionName} (${app.versionCode})</p>
+                        <p><strong>APK Name:</strong> ${app.apkName}</p>
+                    </div>
                 `;
             } else {
-                resultDiv.innerText = '未找到相关应用';
+                container.innerHTML = `<p>No app found with the given name or package.</p>`;
             }
         }
+
+        // Load data on page load
+        window.onload = loadData;
     </script>
 </body>
 </html>
