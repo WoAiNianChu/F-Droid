@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F-Droid 应用查询</title>
+</head>
+<body>
+    <h1>查询 F-Droid 应用信息</h1>
+    <input type="text" id="query" placeholder="输入包名或应用名称">
+    <button onclick="fetchAppInfo()">查询</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function fetchAppInfo() {
+            const query = document.getElementById('query').value.toLowerCase();
+            const response = await fetch('index-v1.json');
+            const indexData = await response.json();
+
+            // 查找应用信息
+            const appInfo = Object.values(indexData.packages).find(app => 
+                app.packageName.toLowerCase() === query || 
+                app.name.toLowerCase().includes(query)
+            );
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // 清空之前的结果
+
+            if (appInfo) {
+                const latestVersion = appInfo.versions[appInfo.suggestedVersionCode];
+                resultDiv.innerHTML = `
+                    <h2>${appInfo.name} (${appInfo.packageName})</h2>
+                    <p><strong>版本号:</strong> ${latestVersion.versionCode}</p>
+                    <p><strong>版本名称:</strong> ${latestVersion.versionName}</p>
+                    <p><strong>应用介绍:</strong> ${latestVersion.summary || '无描述'}</p>
+                    <p><strong>最新安装包:</strong> <a href="https://f-droid.org/repo/${latestVersion.apkName}" target="_blank">下载链接</a></p>
+                `;
+            } else {
+                resultDiv.innerText = '未找到相关应用';
+            }
+        }
+    </script>
+</body>
+</html>
