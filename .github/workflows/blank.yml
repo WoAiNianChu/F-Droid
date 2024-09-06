@@ -14,6 +14,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Python and Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install xmltodict
+
       - name: Download F-Droid Index
         run: |
           curl -o index.jar https://f-droid.org/repo/index.jar
@@ -21,17 +27,37 @@ jobs:
       - name: Extract index.xml from JAR
         run: |
           unzip -o index.jar index.xml
-          cat index.xml # 调试输出 index.xml 文件内容
 
-      - name: Convert index.xml to JSON
+      - name: Convert XML to JSON
         run: |
-          sudo apt-get install -y xmlstarlet
-          # 提取 XML 数据到 index.txt
-          xmlstarlet sel -t -m "/fdroid/application" -v "concat(id,'|',name,'|',summary,'|',desc,'|',marketversion,'|',marketvercode,'|',package/version/versioncode,'|',package/version/versionname,'|',package/version/apkname)" -n index.xml > index.txt
-          # 检查生成的 index.txt 文件内容
-          cat index.txt
-          # 将 index.txt 转换为 JSON 格式
-          jq -R -s -c 'split("\n") | map(split("|") | {id: .[0], name: .[1], summary: .[2], desc: .[3], marketversion: .[4], marketvercode: .[5], versionCode: .[6], versionName: .[7], apkName: .[8]})' index.txt > index.json
+          # 创建 Python 脚本
+          echo '
+import xml.etree.ElementTree as ET
+import json
+
+tree = ET.parse("index.xml")
+root = tree.getroot()
+
+data = []
+
+for app in root.findall("application"):
+    app_data = {
+        "id": app.find("id").text,
+        "name": app.find("name").text.strip(),
+        "summary": app.find("summary").text.strip(),
+        "desc": app.find("desc").text.strip(),
+        "marketversion": app.find("marketversion").text.strip(),
+        "marketvercode": app.find("marketvercode").text.strip(),
+        "versionCode": app.find("package/version/versioncode").text.strip(),
+        "versionName": app.find("package/version/versionname").text.strip(),
+        "apkName": app.find("package/version/apkname").text.strip()
+    }
+    data.append(app_data)
+
+with open("index.json", "w") as f:
+    json.dump(data, f, indent=2)
+' > convert_xml_to_json.py
+          python3 convert_xml_to_json.py
 
       - name: Commit and Push
         env:
