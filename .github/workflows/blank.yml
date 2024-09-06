@@ -21,13 +21,17 @@ jobs:
       - name: Extract index.xml from JAR
         run: |
           unzip -o index.jar index.xml
+          cat index.xml # 调试输出 index.xml 文件内容
 
       - name: Convert index.xml to JSON
         run: |
           sudo apt-get install -y xmlstarlet
-          xmlstarlet sel -t -m "/fd-index/application" -v "concat(packageName,'|',name,'|',desc,'|',versions/version/versionCode,'|',versions/version/versionName,'|',versions/version/apkName)" -n index.xml > index.txt
-          # 将XML转换成JSON格式
-          jq -R -s -c 'split("\n") | map(split("|") | {packageName: .[0], name: .[1], desc: .[2], versionCode: .[3], versionName: .[4], apkName: .[5]})' index.txt > index.json
+          # 提取 XML 数据到 index.txt
+          xmlstarlet sel -t -m "/fdroid/application" -v "concat(id,'|',name,'|',summary,'|',desc,'|',marketversion,'|',marketvercode,'|',package/version/versioncode,'|',package/version/versionname,'|',package/version/apkname)" -n index.xml > index.txt
+          # 检查生成的 index.txt 文件内容
+          cat index.txt
+          # 将 index.txt 转换为 JSON 格式
+          jq -R -s -c 'split("\n") | map(split("|") | {id: .[0], name: .[1], summary: .[2], desc: .[3], marketversion: .[4], marketvercode: .[5], versionCode: .[6], versionName: .[7], apkName: .[8]})' index.txt > index.json
 
       - name: Commit and Push
         env:
