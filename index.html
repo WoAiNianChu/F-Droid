@@ -52,28 +52,24 @@
     <script>
         async function fetchAppInfo() {
             const query = document.getElementById('query').value.toLowerCase().trim();
-            const response = await fetch('index-v1.json');
+            const response = await fetch('index.json');
             const indexData = await response.json();
 
-            const packages = indexData.packages;
-            const appInfo = Object.keys(packages).map(key => packages[key])
-                .find(app => 
-                    app.packageName.toLowerCase() === query || 
-                    (app.name && app.name.toLowerCase().includes(query))
-                );
+            const appInfo = indexData.find(app => 
+                app.packageName.toLowerCase() === query || 
+                (app.name && app.name.toLowerCase().includes(query))
+            );
 
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = ''; // 清空之前的结果
 
             if (appInfo) {
-                const latestVersionCode = Object.keys(appInfo.versions).sort((a, b) => b - a)[0]; // 获取最新版本代码
-                const latestVersion = appInfo.versions[latestVersionCode];
                 resultDiv.innerHTML = `
                     <h2>${appInfo.name || '无应用名称'} (${appInfo.packageName})</h2>
-                    <p><strong>版本号:</strong> ${latestVersionCode}</p>
-                    <p><strong>版本名称:</strong> ${latestVersion.versionName || '无版本名称'}</p>
-                    <p><strong>应用介绍:</strong> ${latestVersion.summary || '无描述'}</p>
-                    <p><strong>最新安装包:</strong> <a href="https://f-droid.org/repo/${latestVersion.apkName}" target="_blank">下载链接</a></p>
+                    <p><strong>版本号:</strong> ${appInfo.versionCode}</p>
+                    <p><strong>版本名称:</strong> ${appInfo.versionName || '无版本名称'}</p>
+                    <p><strong>应用介绍:</strong> ${appInfo.desc || '无描述'}</p>
+                    <p><strong>最新安装包:</strong> <a href="https://f-droid.org/repo/${appInfo.apkName}" target="_blank">下载链接</a></p>
                 `;
             } else {
                 resultDiv.innerText = '未找到相关应用';
