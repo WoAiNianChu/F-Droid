@@ -14,25 +14,28 @@
 
     <script>
         async function fetchAppInfo() {
-            const query = document.getElementById('query').value.toLowerCase();
+            const query = document.getElementById('query').value.toLowerCase().trim();
             const response = await fetch('index-v1.json');
             const indexData = await response.json();
 
-            // 查找应用信息
-            const appInfo = Object.values(indexData.packages).find(app => 
-                app.packageName.toLowerCase() === query || 
-                app.name.toLowerCase().includes(query)
-            );
+            // 遍历所有应用并查找匹配项
+            const packages = indexData.packages;
+            const appInfo = Object.keys(packages).map(key => packages[key])
+                .find(app => 
+                    app.packageName.toLowerCase() === query || 
+                    (app.name && app.name.toLowerCase().includes(query))
+                );
 
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = ''; // 清空之前的结果
 
             if (appInfo) {
-                const latestVersion = appInfo.versions[appInfo.suggestedVersionCode];
+                const latestVersionCode = Object.keys(appInfo.versions).sort((a, b) => b - a)[0]; // 获取最新版本代码
+                const latestVersion = appInfo.versions[latestVersionCode];
                 resultDiv.innerHTML = `
-                    <h2>${appInfo.name} (${appInfo.packageName})</h2>
-                    <p><strong>版本号:</strong> ${latestVersion.versionCode}</p>
-                    <p><strong>版本名称:</strong> ${latestVersion.versionName}</p>
+                    <h2>${appInfo.name || '无应用名称'} (${appInfo.packageName})</h2>
+                    <p><strong>版本号:</strong> ${latestVersionCode}</p>
+                    <p><strong>版本名称:</strong> ${latestVersion.versionName || '无版本名称'}</p>
                     <p><strong>应用介绍:</strong> ${latestVersion.summary || '无描述'}</p>
                     <p><strong>最新安装包:</strong> <a href="https://f-droid.org/repo/${latestVersion.apkName}" target="_blank">下载链接</a></p>
                 `;
