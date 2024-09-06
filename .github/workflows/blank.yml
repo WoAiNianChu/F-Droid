@@ -1,72 +1,39 @@
-name: Download and Extract F-Droid Index
+name: Process F-Droid Index
 
 on:
+  push:
+    branches:
+      - main
   schedule:
-    - cron: '0 0 * * *' # 每天 UTC 时间的凌晨 0 点触发
-  workflow_dispatch: # 手动触发工作流
-  push: # 当代码推送到仓库时触发
+    - cron: '0 0 * * *'  # 每天运行一次
 
 jobs:
-  download-and-extract:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Install Python and Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip
-          pip3 install xmltodict
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Download F-Droid Index
-        run: |
-          curl -o index.jar https://f-droid.org/repo/index.jar
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install lxml
 
-      - name: Extract index.xml from JAR
-        run: |
-          unzip -o index.jar index.xml
+    - name: Run Python script
+      run: python process_index.py
 
-      - name: Convert XML to JSON
-        run: |
-          # 创建 Python 脚本
-          echo '
-import xml.etree.ElementTree as ET
-import json
-
-tree = ET.parse("index.xml")
-root = tree.getroot()
-
-data = []
-
-for app in root.findall("application"):
-    app_data = {
-        "id": app.find("id").text,
-        "name": app.find("name").text.strip(),
-        "summary": app.find("summary").text.strip(),
-        "desc": app.find("desc").text.strip(),
-        "marketversion": app.find("marketversion").text.strip(),
-        "marketvercode": app.find("marketvercode").text.strip(),
-        "versionCode": app.find("package/version/versioncode").text.strip(),
-        "versionName": app.find("package/version/versionname").text.strip(),
-        "apkName": app.find("package/version/apkname").text.strip()
-    }
-    data.append(app_data)
-
-with open("index.json", "w") as f:
-    json.dump(data, f, indent=2)
-' > convert_xml_to_json.py
-          python3 convert_xml_to_json.py
-
-      - name: Commit and Push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git add index.json
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update F-Droid Index"
-            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:refs/heads/main
-          fi
+    - name: Commit and push JSON
+      run: |
+        git config --local user.email "your-email@example.com"
+        git config --local user.name "GitHub Actions"
+        git add index.json
+        git commit -m "Update F-Droid Index JSON"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
