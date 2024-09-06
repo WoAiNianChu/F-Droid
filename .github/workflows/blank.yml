@@ -15,6 +15,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Download index.jar
+      run: |
+        curl -L -o index.jar https://f-droid.org/repo/index.jar  # 替换为实际的下载链接
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
